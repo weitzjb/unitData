@@ -1,0 +1,279 @@
+---
+title: "Oxford PICU Annual Report"
+author: "James Weitz"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+
+```{r echo=FALSE, include=FALSE}
+library(lubridate)
+library(timeDate)
+library(kableExtra)
+library(knitr)
+library(pander)
+library(Hmisc)
+library(colorspace)
+library(pander)
+setwd("~/Dropbox/2017/Review Report/")
+medicusAll <- read.csv("medicusReport.csv", header = TRUE)
+row.names(medicusAll) <- medicusAll$Unit.number
+medicusAll$Source.of.admission <- gsub("Clinic", "Same Hospital", medicusAll$Source.of.admission)
+de
+# Optimsie fields
+medicusAll$Unit.admission.date <- as.Date(medicusAll$Unit.admission.date, "%d/%m/%Y")
+medicusAll$Unit.discharge.date <- as.Date(medicusAll$Unit.discharge.date, "%d/%m/%Y")
+medicusAll$Date.hospital.discharge <- as.Date(medicusAll$Date.hospital.discharge, "%d/%m/%Y")
+medicusAll$Date.of.Birth <- as.Date(medicusAll$Date.of.Birth, "%d/%m/%Y")
+medicusAll$Date.of.death <- as.Date(medicusAll$Date.of.death, "%d/%m/%Y")
+medicusAll$Hospital.admission.date <- as.Date(medicusAll$Hospital.admission.date, "%d/%m/%Y")
+medicusAll$Weight <- as.numeric(as.character(medicusAll$Weight))
+
+# Get full sequence of dates by month
+minDate <- min(medicusAll$Unit.admission.date)
+maxDate <- max(medicusAll$Unit.admission.date)
+dateSequence <- seq.Date(minDate, maxDate, by = "month")
+
+# initialise vectors
+elective <- c()
+nonelective <- c()
+male <- c()
+female <- c()
+sameHosp <- c()
+otherHosp <- c()
+clinic <- c()
+totalMonth <- c()
+
+# Total number of admissions
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- nrow(test)
+  totalMonth[i] <- as.numeric(x)
+}
+
+
+# elective admissions (1 = no, 2 = yes)
+
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Elective.admission)
+  elective[i] <- as.numeric(x[2])
+}
+
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Elective.admission)
+  nonelective[i] <- as.numeric(x[1])
+}
+
+# Sex
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Sex)
+  male[i] <- as.numeric(x[1])
+}
+
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Sex)
+  female[i] <- as.numeric(x[2])
+}
+
+# Source admissions (1 = clinic, 2 = other hospital, 3 = same hospital)
+# for (i in 1:length(dateSequence)) {
+#   test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+#   x <- table(test$Source.of.admission)
+#   clinic[i] <- as.numeric(x[1])
+# }
+
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Source.of.admission)
+  otherHosp[i] <- as.numeric(x[1])
+}
+
+for (i in 1:length(dateSequence)) {
+  test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+  x <- table(test$Source.of.admission)
+  sameHosp[i] <- as.numeric(x[2])
+}
+# age matrix
+boundaires <- c(0,1,5,10,15,Inf)
+
+ageMatrix <- matrix(nrow = length(dateSequence), ncol = 5)
+for (i in 1:length(dateSequence)) {
+  monthDivision <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])),]
+  x <- table(cut(monthDivision$Age.decimal, boundaires))
+  ageMatrix[i,] <- as.numeric(x)
+}
+colnames(ageMatrix) <- c("<1 year", "1-5 years", "5-10 years", "10-15 years", ">15 years")
+
+# Internal elective vs emergency
+jrhElective <- c()
+jrhEmergency <- c()
+for (i in 1:length(dateSequence)) {
+   test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+   x <- table(test$Source.of.admission, test$Elective.admission)
+   jrhEmergency[i] <- x[2]
+}
+for (i in 1:length(dateSequence)) {
+   test <- medicusAll[medicusAll$Unit.admission.date >= as.Date(timeFirstDayInMonth(dateSequence[i])) & medicusAll$Unit.admission.date <= as.Date(timeLastDayInMonth(dateSequence[i])), ]
+   x <- table(test$Source.of.admission, test$Elective.admission)
+   jrhElective[i] <- x[4]
+}
+
+# From DF with demographics and totals.
+initialDemographics <- data.frame(totalMonth, elective, nonelective, male, female, otherHosp, sameHosp, ageMatrix)
+totsDemographics <- c()
+totsDemographicsBold <- c()
+for (i in 1:length(initialDemographics)) {
+  totsDemographics[i] <- as.character(sum(initialDemographics[,i]))
+  totsDemographicsBold[i] <- paste("**", totsDemographics[i], "**", sep = "")
+}
+finalDemographics <- rbind(initialDemographics, totsDemographicsBold)
+
+# Add in month and years with one extra NA column
+monthsDemo <- c()
+yearsDemo <- c()
+for (i in 1:length(dateSequence)) {
+  monthsDemo[i] <- as.character(month.name[month(dateSequence[i])])
+}
+for (i in 1:length(dateSequence)) {
+  yearsDemo[i] <- as.character(year(dateSequence[i]))
+}
+
+i <- (length(dateSequence)+1)
+yearsDemo[i] <- "**Totals**"
+monthsDemo[i] <- " "
+
+finalDemographics <- cbind(yearsDemo, as.character(monthsDemo), finalDemographics)
+colnames(finalDemographics) <- c("Year", "Month", "Total", "Elective", "Non-Elective", "Male", "Female", "External", "Internal", "<1", "1-5", "5-10", "10-15", ">15")
+```
+# General Demographics
+```{r echo=FALSE}
+kable(finalDemographics, format = "html", caption = "PICU Admissions", align = c("l","l",rep("c",12))) %>%
+  kable_styling(bootstrap_options = "striped",
+                full_width = F) %>%
+  add_header_above(c(" ", " "," ", "Type" = 2, "Sex" = 2, "Source" = 2, "Age" = 5 ))
+
+
+
+
+
+```
+```{r echo=FALSE}
+# Plots for Source of admission
+plot(dateSequence, sameHosp, type = "b", ylim = c(0,100), pch=16, col=c("red"), main="Source of Admissions", xlab = "Month", ylab = "Number of Admissions")
+legend("topright", title = "Admissions from", inset = 0.03, c("JRH", "External Hospital"),
+       lty=c(1,1), pch=c(16,16), col=c("red", "blue"))
+lines(dateSequence, otherHosp, type = "b", pch=16, col="blue")
+
+```
+```{r echo=FALSE}
+# Plot for Elective and non elective admissions
+plot(dateSequence, nonelective, type = "b", ylim = c(0,90), pch=16, col=c("red"), main="Elective vs Non Elective Admissions (All Admissions)", xlab = "Month", ylab = "Number of Admissions")
+lines(dateSequence, elective, type = "b", pch=16, col="blue")
+legend("topright", title = "Admission Type", inset = 0.03, c("Non-elective", "Elective"),
+       lty=c(1,1), pch=c(16,16), col=c("red", "blue"))
+#legend("topright", inset=0.5, )
+```
+
+```{r echo=FALSE}
+# Plot for Elective and non elective admissions for JRH only
+plot(dateSequence, jrhEmergency, type = "b", ylim = c(0,90), pch=16, col=c("red"), main="Elective vs Non Elective Admissions (JRH Only)", xlab = "Month", ylab = "Number of Admissions")
+lines(dateSequence, jrhElective, type = "b", pch=16, col="blue")
+legend("topright", title = "Admission Type", inset = 0.03, c("Non-elective", "Elective"),
+       lty=c(1,1), pch=c(16,16), col=c("red", "blue"))
+#legend("topright", inset=0.5, )
+```
+```{r echo=FALSE}
+hist(medicusAll$Age.decimal, probability = TRUE, col = "lightcyan", xlim = c(0,20), xlab = "Age", ylab = "Probability (Likelehood)", main="Ages of children in PCC")
+lines(density(medicusAll$Age.decimal), col="red")
+
+
+```
+
+
+```{r echo=FALSE}
+
+
+hospitalsPie <- medicusAll$Referral...unit...location
+hospitalsPie <- as.character(hospitalsPie)
+
+# Input shortened names for Local Hospitals
+hospitalsPie <- gsub("Milton Keynes Hospital - Milton Keynes", "MKH - Milton Keynes", hospitalsPie)
+hospitalsPie <- gsub("Wexham Park Hospital - Slough", "WPH - Slough", hospitalsPie)
+hospitalsPie <- gsub("The Great Western Hospital - Swindon", "GWH - Swindon", hospitalsPie)
+hospitalsPie <- gsub("Southampton General Hospital", "SGH - Southampton", hospitalsPie)
+hospitalsPie <- gsub("Wycombe Hospital - High Wycombe", "WH - Wycombe", hospitalsPie)
+hospitalsPie <- gsub("Stoke Mandeville Hospital - Aylesbury", "SMH - Aylesbury", hospitalsPie)
+hospitalsPie <- gsub("Royal Berkshire Hospital - Reading", "RBH - Reading", hospitalsPie)
+hospitalsPie <- gsub("Northampton General Hospital (Acute) - Northampton", fixed = TRUE, "NGH - Northampton", hospitalsPie)
+hospitalsPie <- gsub("Horton General Hospital - Banbury", "HGH - Banbury", hospitalsPie)
+
+#Create vector of Local Hospitals
+majorHospitals <- c("MKH - Milton Keynes", "WPH - Slough", "GWH - Swindon", "WH - Wycombe", "SMH - Aylesbury", "RBH - Reading", "NGH - Northampton", "HGH - Banbury", "SGH - Southampton")
+
+#duplicate into another vector for the other hospitals
+otherHospList <- hospitalsPie
+
+# extract list of other hospitals, remove duplicates amd sort alphabetically
+otherHospList[otherHospList == ""] <- NA
+otherHospList <- as.character(otherHospList)
+otherHospList <- otherHospList[!(otherHospList %in% majorHospitals) & !is.na(otherHospList)]
+otherHospList <- sort(unique(otherHospList))
+
+#remove non local hospitals and non retrieved patients
+hospitalsPie[hospitalsPie == ""] <- NA
+hospitalsPie[!(hospitalsPie %in% majorHospitals) & !is.na(hospitalsPie)] <- "Other"
+hospitalsPie[hospitalsPie == "Other"] <- NA
+# Re-factorise
+hospitalsPie <- factor(hospitalsPie)
+
+#produce pie chart from table
+x <- table(hospitalsPie)
+x <- sort(x, decreasing = TRUE)
+pie(x, clockwise = TRUE, labels = as.numeric(x), col = rainbow_hcl(length(x)), main = "Children from local hospitals")
+legend("topright", names(x), cex = 0.7, fill = rainbow_hcl(length(x)))
+
+
+```
+
+**List of Other Hospitals Children admitted from:**
+```{r results='asis', echo=FALSE}
+pandoc.list(otherHospList)
+```
+
+```{r echo=FALSE}
+los <- data.frame(medicusAll$Length.stay.days.rounded)
+names(los) <- "daysRound"
+
+# Add new category to df and categorise LOS valuse
+los <- within(los, {
+  loscat <- NA
+  loscat[daysRound <=2] <- "<2 days"
+  loscat[daysRound >2 & daysRound <= 7] <- "2-7 days"
+  loscat[daysRound >7 & daysRound <= 30] <- "7-30 days"
+  loscat[daysRound >30 & daysRound <=(30*3)] <- "1-3 months"
+  loscat[daysRound > 90] <- "> 3 months"
+  loscat[daysRound > (356/2)] <- "> 6 months"
+})
+
+#factorise and create DF
+los$loscat <- factor(los$loscat, levels = c("<2 days", "2-7 days", "7-30 days", "1-3 months", "> 3 months", "> 6 months"), ordered = TRUE)
+tablelos <- data.frame(table(los$loscat))
+
+# Create horizontal barchart... This may look better if the above factor is re-ordered the other way from shortest to longest so the longest bars are at the top ??
+losTable <- table(los$loscat)
+xco <- as.numeric(losTable)  # losTable prints values of midline of bars on plot! Very useful! 
+nums <- as.character(as.numeric(losTable))
+plotLOS <- barplot(losTable, space = 0.5, horiz = TRUE, cex.names = 0.6, las = 1, col = "cyan", xlim = c(0,400), main = "Length of Stay in PCC", xlab = "Numbers of Children")
+text(xco, as.numeric(plotLOS), as.character(xco), pos = 4, cex = 0.7 )
+
+```
+
