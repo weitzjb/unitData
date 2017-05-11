@@ -174,6 +174,7 @@ legend("topright", title = "Admissions from", inset = 0.03, c("JRH", "External H
 lines(dateSequence, otherHosp, type = "b", pch=16, col="blue")
 
 ```
+#Elective vs Non Elective Admissions
 ```{r echo=FALSE}
 # Plot for Elective and non elective admissions
 plot(dateSequence, nonelective, type = "b", ylim = c(0,90), pch=16, col=c("red"), main="Elective vs Non Elective Admissions (All Admissions)", xlab = "Month", ylab = "Number of Admissions")
@@ -191,6 +192,7 @@ legend("topright", title = "Admission Type", inset = 0.03, c("Non-elective", "El
        lty=c(1,1), pch=c(16,16), col=c("red", "blue"))
 #legend("topright", inset=0.5, )
 ```
+#Age 
 ```{r echo=FALSE}
 hist(medicusAll$Age.decimal, probability = TRUE, col = "lightcyan", xlim = c(0,20), xlab = "Age", ylab = "Probability (Likelehood)", main="Ages of children in PCC")
 lines(density(medicusAll$Age.decimal), col="red")
@@ -198,7 +200,7 @@ lines(density(medicusAll$Age.decimal), col="red")
 
 ```
 
-
+#Hospitals Reffering to Oxfrord PCC
 ```{r echo=FALSE}
 
 
@@ -248,7 +250,7 @@ legend("topright", names(x), cex = 0.7, fill = rainbow_hcl(length(x)))
 ```{r results='asis', echo=FALSE}
 pandoc.list(otherHospList)
 ```
-
+#Length of Stay in PCC
 ```{r echo=FALSE}
 los <- data.frame(medicusAll$Length.stay.days.rounded)
 names(los) <- "daysRound"
