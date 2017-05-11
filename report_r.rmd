@@ -26,12 +26,15 @@ row.names(medicusAll) <- medicusAll$Unit.number
 medicusAll$Source.of.admission <- gsub("Clinic", "Same Hospital", medicusAll$Source.of.admission)
 de
 # Optimsie fields
-medicusAll$Unit.admission.date <- as.Date(medicusAll$Unit.admission.date, "%d/%m/%Y")
-medicusAll$Unit.discharge.date <- as.Date(medicusAll$Unit.discharge.date, "%d/%m/%Y")
-medicusAll$Date.hospital.discharge <- as.Date(medicusAll$Date.hospital.discharge, "%d/%m/%Y")
-medicusAll$Date.of.Birth <- as.Date(medicusAll$Date.of.Birth, "%d/%m/%Y")
-medicusAll$Date.of.death <- as.Date(medicusAll$Date.of.death, "%d/%m/%Y")
-medicusAll$Hospital.admission.date <- as.Date(medicusAll$Hospital.admission.date, "%d/%m/%Y")
+# Better way to do this might be to somehow search fro all the fields containing 'date' and just change them.. ??regex
+dateFormat <- "%d/%m/%Y"
+
+medicusAll$Unit.admission.date <- as.Date(medicusAll$Unit.admission.date, dateFormat)
+medicusAll$Unit.discharge.date <- as.Date(medicusAll$Unit.discharge.date, dateFormat)
+medicusAll$Date.hospital.discharge <- as.Date(medicusAll$Date.hospital.discharge, dateFormat)
+medicusAll$Date.of.Birth <- as.Date(medicusAll$Date.of.Birth, dateFormat)
+medicusAll$Date.of.death <- as.Date(medicusAll$Date.of.death, dateFormat)
+medicusAll$Hospital.admission.date <- as.Date(medicusAll$Hospital.admission.date, dateFormat)
 medicusAll$Weight <- as.numeric(as.character(medicusAll$Weight))
 
 # Get full sequence of dates by month
@@ -266,9 +269,8 @@ los <- within(los, {
   loscat[daysRound > (356/2)] <- "> 6 months"
 })
 
-#factorise and create DF
+#factorise
 los$loscat <- factor(los$loscat, levels = c("<2 days", "2-7 days", "7-30 days", "1-3 months", "> 3 months", "> 6 months"), ordered = TRUE)
-tablelos <- data.frame(table(los$loscat))
 
 # Create horizontal barchart... This may look better if the above factor is re-ordered the other way from shortest to longest so the longest bars are at the top ??
 losTable <- table(los$loscat)
